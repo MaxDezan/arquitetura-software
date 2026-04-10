@@ -33,8 +33,4 @@ public class ProductService implements ServiceInterface{
         return armazenamento.findOneById(id);
     }
 
-    public UUID generateUUID() {
-        return UUID.randomUUID();
-    }
-
 }

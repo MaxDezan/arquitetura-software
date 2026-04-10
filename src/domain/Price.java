@@ -29,4 +29,10 @@ public class Price implements EntityInterface{
                 ", date=" + date +
                 '}';
     }
+
+    @Override
+    public UUID getUUID() {
+        return this.uuid;
+    }
+
 }

@@ -1,24 +1,16 @@
 import domain.Product;
+import service.ProductService;
 
 void main() {
-    Product product = new Product();
+    ProductService productService = new ProductService();
 
-    product.setName("Celular");
-    product.setSku("PROD001");
-    product.setPrice(3200);
-    product.setPrice(3100);
+    productService.create(new Product(
+            productService.generateUUID(),
+            "SKU",
+            "celular",
+            2
+    ));
 
-    Product product2 = new Product();
-    product2.setName("Headset");
-    product2.setSku("PROD002");
-    product2.setPrice(370);
-    product2.setPrice(450);
+    productService.listAll();
 
-    Product product3 = new Product();
-    product3.setName("Tablet");
-    product3.setSku("PROD003");
-    product3.setPrice(2500);
-    product3.setPrice(2000);
-
-    System.out.println(product2);
 }

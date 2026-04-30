@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ArqSfw.iml" filepath="$PROJECT_DIR$/ArqSfw.iml" />
+      <module fileurl="file://$PROJECT_DIR$/arquitetura-software.iml" filepath="$PROJECT_DIR$/arquitetura-software.iml" />
     </modules>
   </component>
 </project>

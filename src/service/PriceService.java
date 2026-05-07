@@ -3,12 +3,12 @@ package service;
 import adapter.DatabaseStorage;
 import adapter.PersistInterface;
 import domain.EntityInterface;
-import domain.Product;
+import domain.Price;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class ProductService implements ServiceInterface {
-    PersistInterface armazenamento = new DatabaseStorage<>(Product.class);
+public class PriceService implements ServiceInterface {
+    PersistInterface armazenamento = new DatabaseStorage<>(Price.class);
 
     @Override
     public void create(EntityInterface entity) {
@@ -32,5 +32,4 @@ public class ProductService implements ServiceInterface {
     public EntityInterface getById(UUID id) {
         return armazenamento.findOneById(id);
     }
-
 }

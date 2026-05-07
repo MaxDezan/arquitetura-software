@@ -1,22 +1,38 @@
 package adapter;
 
 import domain.EntityInterface;
-import domain.Product;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
+import jakarta.persistence.*;
+import org.hibernate.Hibernate;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-public class DatabaseStorage implements PersistInterface {
+public class DatabaseStorage<T extends EntityInterface> implements PersistInterface {
+
     private static final String PERSISTENCE_UNIT = "default";
 
     private final EntityManagerFactory emf;
+    private final Class<T> type;
 
-    public DatabaseStorage() {
+    public DatabaseStorage(Class<T> type) {
         this.emf = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT);
+        this.type = type;
+    }
+
+    private void initLazyCollections(Object entity) {
+        if (entity == null) return;
+        for (Field field : entity.getClass().getDeclaredFields()) {
+            if (!Collection.class.isAssignableFrom(field.getType())) continue;
+            try {
+                field.setAccessible(true);
+                Object value = field.get(entity);
+                if (value != null) Hibernate.initialize(value);
+            } catch (IllegalAccessException ignored) {
+            }
+        }
     }
 
     @Override
@@ -59,9 +75,9 @@ public class DatabaseStorage implements PersistInterface {
     public ArrayList<EntityInterface> listAll() {
         EntityManager em = emf.createEntityManager();
         try {
-            List<Product> result = em
-                    .createQuery("SELECT p FROM Product p", Product.class)
-                    .getResultList();
+            String jpql = "SELECT e FROM " + type.getSimpleName() + " e";
+            List<T> result = em.createQuery(jpql, type).getResultList();
+            result.forEach(this::initLazyCollections);
             return new ArrayList<>(result);
         } finally {
             em.close();
@@ -72,7 +88,9 @@ public class DatabaseStorage implements PersistInterface {
     public EntityInterface findOneById(UUID id) {
         EntityManager em = emf.createEntityManager();
         try {
-            return em.find(Product.class, id);
+            T entity = em.find(type, id);
+            initLazyCollections(entity);
+            return entity;
         } finally {
             em.close();
         }

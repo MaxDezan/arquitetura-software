@@ -1,24 +1,18 @@
 package domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Table(name = "product")
 public class Product implements EntityInterface {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @JdbcTypeCode(SqlTypes.VARCHAR)
@@ -31,26 +25,29 @@ public class Product implements EntityInterface {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "price")
-    private Float price;
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = false)
+    @JoinColumn(name = "price_id")
+    private Price price;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "date_price")
-    private Date datePrice;
-
-    @Transient
-    private ArrayList<Price> historicalPrice = new ArrayList<>();
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Price> historicalPrice = new ArrayList<>();
 
     public Product() {
     }
 
-    public Product(String sku, String name, Float price) {
+    public Product(String sku, String name, Float value) {
+        this.sku = sku;
+        this.name = name;
+        this.price = new Price(value, new Date());
+    }
+
+    public Product(String sku, String name, Price price) {
         this.sku = sku;
         this.name = name;
         this.price = price;
     }
 
-    public Product(UUID uuid, String sku, String name, Float price) {
+    public Product(UUID uuid, String sku, String name, Price price) {
         this.uuid = uuid;
         this.sku = sku;
         this.name = name;
@@ -73,33 +70,27 @@ public class Product implements EntityInterface {
         this.name = name;
     }
 
-    public Float getPrice() {
+    public Price getPrice() {
         return price;
     }
 
-    public void setPrice(Float price) {
-        if (this.price != null && this.datePrice != null) {
-            Price oldPrice = new Price(this.price, this.datePrice);
-            historicalPrice.add(oldPrice);
+    public void setPrice(Price newPrice) {
+        if (this.price != null) {
+            this.price.setProduct(this);
+            historicalPrice.add(this.price);
         }
-
-        this.price = price;
-        this.datePrice = new Date();
+        this.price = newPrice;
     }
 
-    public Date getDatePrice() {
-        return datePrice;
+    public void setPrice(Float value) {
+        setPrice(new Price(value, new Date()));
     }
 
-    public void setDatePrice(Date datePrice) {
-        this.datePrice = datePrice;
-    }
-
-    public ArrayList<Price> getHistoricalPrice() {
+    public List<Price> getHistoricalPrice() {
         return historicalPrice;
     }
 
-    public void setHistoricalPrice(ArrayList<Price> historicalPrice) {
+    public void setHistoricalPrice(List<Price> historicalPrice) {
         this.historicalPrice = historicalPrice;
     }
 
@@ -110,13 +101,16 @@ public class Product implements EntityInterface {
 
     @Override
     public String toString() {
-        return "Product{" +
-                "UUID='" + uuid.toString() +'\'' +
-                "Sku='" + sku + '\'' +
-                ", name='" + name + '\'' +
-                ", price=" + price +
-                ", datePrice=" + datePrice +
-                ", historicalPrice=" + historicalPrice +
-                '}';
+        String currentPrice = price != null ? price.getPrice() + " @ " + price.getDate() : "none";
+        String history = historicalPrice.stream()
+                .map(p -> p.getPrice() + " @ " + p.getDate())
+                .collect(java.util.stream.Collectors.joining(", ", "[", "]"));
+        return "Product { " +
+                "uuid='" + uuid + "', " +
+                "sku='" + sku + "', " +
+                "name='" + name + "', " +
+                "price=" + currentPrice + ", " +
+                "history=" + history +
+                " }";
     }
 }

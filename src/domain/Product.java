@@ -35,20 +35,7 @@ public class Product implements EntityInterface {
     public Product() {
     }
 
-    public Product(String sku, String name, Float value) {
-        this.sku = sku;
-        this.name = name;
-        this.price = new Price(value, new Date());
-    }
-
     public Product(String sku, String name, Price price) {
-        this.sku = sku;
-        this.name = name;
-        this.price = price;
-    }
-
-    public Product(UUID uuid, String sku, String name, Price price) {
-        this.uuid = uuid;
         this.sku = sku;
         this.name = name;
         this.price = price;

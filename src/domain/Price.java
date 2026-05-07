@@ -32,18 +32,6 @@ public class Price implements EntityInterface {
         this.date = date;
     }
 
-    public Price(Product product, Float price, Date date) {
-        this.product = product;
-        this.price = price;
-        this.date = date;
-    }
-
-    public Price(UUID uuid, Float price, Date date) {
-        this.uuid = uuid;
-        this.price = price;
-        this.date = date;
-    }
-
     public Float getPrice() {
         return price;
     }

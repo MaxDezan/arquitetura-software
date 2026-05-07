@@ -11,7 +11,7 @@ public class ProductService implements ServiceInterface {
     PersistInterface armazenamento = new DatabaseStorage<>(Product.class);
 
     @Override
-    public void create(EntityInterface entity) {
+    public void save(EntityInterface entity) {
         this.armazenamento.save(entity);
     }
 

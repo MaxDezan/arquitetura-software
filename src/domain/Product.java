@@ -32,6 +32,10 @@ public class Product implements EntityInterface {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Price> historicalPrice = new ArrayList<>();
 
+    // Lista de links de lojas para rastreamento de preco
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ProductLink> links = new ArrayList<>();
+
     public Product() {
     }
 
@@ -39,6 +43,17 @@ public class Product implements EntityInterface {
         this.sku = sku;
         this.name = name;
         this.price = price;
+    }
+
+    public Product(String sku, String name, Price price, List<ProductLink> links) {
+        this.sku = sku;
+        this.name = name;
+        this.price = price;
+        this.links = links;
+        // Garante que cada link aponta para este produto
+        for (ProductLink link : links) {
+            link.setProduct(this);
+        }
     }
 
     public String getSku() {
@@ -81,6 +96,22 @@ public class Product implements EntityInterface {
         this.historicalPrice = historicalPrice;
     }
 
+    public List<ProductLink> getLinks() {
+        return links;
+    }
+
+    public void setLinks(List<ProductLink> links) {
+        this.links = links;
+        for (ProductLink link : links) {
+            link.setProduct(this);
+        }
+    }
+
+    public void addLink(ProductLink link) {
+        link.setProduct(this);
+        this.links.add(link);
+    }
+
     @Override
     public UUID getUUID() {
         return this.uuid;
@@ -88,15 +119,21 @@ public class Product implements EntityInterface {
 
     @Override
     public String toString() {
-        String currentPrice = price != null ? price.getPrice() + " @ " + price.getDate() : "none";
+        String currentPrice = price != null
+                ? price.getPrice() + " @ " + price.getDate() + " (" + price.getStoreName() + ")"
+                : "none";
         String history = historicalPrice.stream()
-                .map(p -> p.getPrice() + " @ " + p.getDate())
+                .map(p -> p.getPrice() + " @ " + p.getDate() + " (" + p.getStoreName() + ")")
+                .collect(java.util.stream.Collectors.joining(", ", "[", "]"));
+        String linksStr = links.stream()
+                .map(l -> l.getStoreName() + ": " + l.getUrl())
                 .collect(java.util.stream.Collectors.joining(", ", "[", "]"));
         return "Product { " +
                 "uuid='" + uuid + "', " +
                 "sku='" + sku + "', " +
                 "name='" + name + "', " +
                 "price=" + currentPrice + ", " +
+                "links=" + linksStr + ", " +
                 "history=" + history +
                 " }";
     }

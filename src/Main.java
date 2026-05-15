@@ -1,33 +1,41 @@
+import adapter.PlaywrightApiScraper;
 import domain.Price;
 import domain.Product;
+import domain.ProductLink;
+import service.CrawlerService;
 import service.ProductService;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 void main() {
     ProductService productService = new ProductService();
 
-    // --- Creation (run once, then comment out to avoid duplicates) ---
-    // Product produto = new Product("SKU-001", "Notebook", new Price(4500f, new Date()));
-    // productService.save(produto);
+    // --- PASSO 1: Cadastro de produtos com links (rode uma vez, depois comente) ---
+    // ProductLink linkAmazon = new ProductLink("Amazon", "https://www.amazon.com.br/PlayStation-5/dp/B09DFKP1GJ");
+    // ProductLink linkKabum  = new ProductLink("Kabum",  "https://www.kabum.com.br/produto/107461");
+    //
+    // Product ps5 = new Product(
+    //     "SKU-PS5",
+    //     "PlayStation 5",
+    //     new Price(4000f, new Date()),
+    //     new ArrayList<>(List.of(linkAmazon, linkKabum))
+    // );
+    // productService.save(ps5);
+    // System.out.println("Produto cadastrado: " + ps5);
 
-    // Product produto2 = new Product("SKU-002", "Tablet", new Price(2500f, new Date()));
-    // productService.save(produto2);
+    // --- PASSO 2: Listar todos os produtos cadastrados ---
+    System.out.println("=== Produtos cadastrados ===");
+    productService.listAll();
 
-    // Product produto3 = new Product("SKU-003", "Mouse", new Price(300f, new Date()));
-    // productService.save(produto3);
+    // --- PASSO 3: Executar o Crawler (busca precos em todas as lojas) ---
+    // Usa o PlaywrightApiScraper: modo HTTP puro (CURL), sem abrir navegador
+    CrawlerService crawler = new CrawlerService(new PlaywrightApiScraper());
+    crawler.executar();
 
-    // --- Fetch existing products from DB by UUID ---
-    Product produto = (Product) productService.getById(UUID.fromString("47d601cf-7290-42ae-8f37-22f4ea03947f"));
-    Product produto2 = (Product) productService.getById(UUID.fromString("9a8246bb-f8aa-4a48-961b-5d8d909d4280"));
-
-    // --- Update prices ---
-    produto.setPrice(5000.99f);
-    productService.save(produto);
-
-    produto2.setPrice(1899.99f);
-    productService.save(produto2);
-
+    // --- PASSO 4: Exibir produtos atualizados apos o crawler ---
+    System.out.println("\n=== Produtos apos execucao do Crawler ===");
     productService.listAll();
 }

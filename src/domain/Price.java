@@ -20,6 +20,10 @@ public class Price implements EntityInterface {
     @Column(name = "date")
     private Date date;
 
+    // Nome da loja onde este preco foi encontrado
+    @Column(name = "store_name")
+    private String storeName;
+
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
@@ -30,6 +34,12 @@ public class Price implements EntityInterface {
     public Price(Float price, Date date) {
         this.price = price;
         this.date = date;
+    }
+
+    public Price(Float price, Date date, String storeName) {
+        this.price = price;
+        this.date = date;
+        this.storeName = storeName;
     }
 
     public Float getPrice() {
@@ -56,6 +66,14 @@ public class Price implements EntityInterface {
         this.product = product;
     }
 
+    public String getStoreName() {
+        return storeName;
+    }
+
+    public void setStoreName(String storeName) {
+        this.storeName = storeName;
+    }
+
     @Override
     public UUID getUUID() {
         return this.uuid;
@@ -65,6 +83,7 @@ public class Price implements EntityInterface {
     public String toString() {
         return "Price { " +
                 price + " @ " + date +
+                ", loja=" + (storeName != null ? storeName : "N/A") +
                 ", product=" + (product != null ? product.getSku() : "none") +
                 " }";
     }

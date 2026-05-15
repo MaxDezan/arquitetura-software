@@ -2,34 +2,12 @@ package service;
 
 import adapter.DatabaseStorage;
 import adapter.PersistInterface;
-import domain.EntityInterface;
 import domain.Price;
-import java.util.ArrayList;
-import java.util.UUID;
 
-public class PriceService implements ServiceInterface {
-    PersistInterface armazenamento = new DatabaseStorage<>(Price.class);
 
-    @Override
-    public void save(EntityInterface entity) {
-        this.armazenamento.save(entity);
+public class PriceService extends BaseService {
+    public PriceService() {
+        armazenamento = new DatabaseStorage<>(Price.class);
     }
 
-    @Override
-    public void delete(EntityInterface entity) {
-        this.armazenamento.delete(entity);
-    }
-
-    @Override
-    public void listAll() {
-        ArrayList<EntityInterface> dados = armazenamento.listAll();
-        for (int i = 0; i < dados.size(); i++) {
-            System.out.println(dados.get(i));
-        }
-    }
-
-    @Override
-    public EntityInterface getById(UUID id) {
-        return armazenamento.findOneById(id);
-    }
 }

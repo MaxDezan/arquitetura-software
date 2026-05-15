@@ -40,17 +40,22 @@ public class DatabaseStorage<T extends EntityInterface> implements PersistInterf
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            if (entity.getUUID() != null) {
-                EntityInterface managed = em.find(entity.getClass(), entity.getUUID());
-                if (managed != null) {
-                    initLazyCollections(managed);
-                    em.merge(entity);
-                } else {
-                    em.persist(entity);
-                }
-            } else {
-                em.persist(entity);
-            }
+            em.persist(entity);
+            em.getTransaction().commit();
+        } catch (RuntimeException e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    public void update(EntityInterface entity) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            em.merge(entity);
             em.getTransaction().commit();
         } catch (RuntimeException e) {
             if (em.getTransaction().isActive()) em.getTransaction().rollback();

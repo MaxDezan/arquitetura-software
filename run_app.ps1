@@ -1,5 +1,5 @@
 $cp = "target\classes"
-$repo = "C:\Users\USER\.m2\repository"
+$repo = "$HOME\.m2\repository"
 $libs = @(
     "org\hibernate\orm\hibernate-core\6.6.4.Final\hibernate-core-6.6.4.Final.jar",
     "org\hibernate\orm\hibernate-community-dialects\6.6.4.Final\hibernate-community-dialects-6.6.4.Final.jar",
@@ -16,7 +16,11 @@ $libs = @(
     "jakarta\xml\bind\jakarta.xml.bind-api\4.0.0\jakarta.xml.bind-api-4.0.0.jar",
     "jakarta\activation\jakarta.activation-api\2.1.0\jakarta.activation-api-2.1.0.jar",
     "org\antlr\antlr4-runtime\4.13.0\antlr4-runtime-4.13.0.jar",
-    "io\smallrye\jandex\3.2.0\jandex-3.2.0.jar"
+    "io\smallrye\jandex\3.2.0\jandex-3.2.0.jar",
+    "com\microsoft\playwright\playwright\1.49.0\playwright-1.49.0.jar",
+    "com\microsoft\playwright\driver\1.49.0\driver-1.49.0.jar",
+    "com\microsoft\playwright\driver-bundle\1.49.0\driver-bundle-1.49.0.jar",
+    "com\google\code\gson\gson\2.11.0\gson-2.11.0.jar"
 )
 
 foreach ($lib in $libs) {

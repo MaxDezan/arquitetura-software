@@ -11,98 +11,109 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Servico central do crawler.
- * Percorre todos os produtos, busca o preco em cada loja cadastrada,
- * compara os resultados e salva o menor preco no historico.
+ * Core crawler service.
+ * Iterates over all products, fetches the price from each registered store,
+ * compares results and saves the lowest price to history.
+ *
+ * Uses a single scraper session (open/close) for all products,
+ * avoiding opening and closing the browser on every call.
  */
 public class CrawlerService {
 
     private final PriceScraperAdapter scraper;
-    private final DatabaseStorage<Product> armazenamento;
+    private final DatabaseStorage<Product> storage;
 
     public CrawlerService(PriceScraperAdapter scraper) {
         this.scraper = scraper;
-        this.armazenamento = new DatabaseStorage<>(Product.class);
+        this.storage = new DatabaseStorage<>(Product.class);
     }
 
     /**
-     * Construtor alternativo para testes (permite injetar um storage mockado ou real).
+     * Alternative constructor for testing (allows injecting a mocked or real storage).
      */
-    public CrawlerService(PriceScraperAdapter scraper, DatabaseStorage<Product> armazenamento) {
+    public CrawlerService(PriceScraperAdapter scraper, DatabaseStorage<Product> storage) {
         this.scraper = scraper;
-        this.armazenamento = armazenamento;
+        this.storage = storage;
     }
 
     /**
-     * Executa o crawler para todos os produtos cadastrados no banco.
+     * Runs the crawler for all products registered in the database.
+     * Opens the browser once and closes it when done.
      */
     public void executar() {
-        System.out.println("=== Iniciando execucao do Crawler ===");
+        System.out.println("=== Starting Crawler ===");
 
-        ArrayList<domain.EntityInterface> todos = armazenamento.listAll();
+        ArrayList<domain.EntityInterface> all = storage.listAll();
 
-        if (todos.isEmpty()) {
-            System.out.println("[INFO] Nenhum produto cadastrado. Encerrando.");
+        if (all.isEmpty()) {
+            System.out.println("[INFO] No products registered. Exiting.");
             return;
         }
 
-        for (domain.EntityInterface entidade : todos) {
-            if (entidade instanceof Product produto) {
-                processarProduto(produto);
+        // Open the browser once for the entire session
+        scraper.open();
+        try {
+            for (domain.EntityInterface entity : all) {
+                if (entity instanceof Product product) {
+                    processProduct(product);
+                }
             }
+        } finally {
+            // Ensures the browser is closed even if an error occurs
+            scraper.close();
         }
 
-        System.out.println("=== Crawler finalizado ===");
+        System.out.println("=== Crawler finished ===");
     }
 
     /**
-     * Processa um produto: busca o preco em todas as lojas e salva o menor.
-     * Pode ser chamado diretamente nos testes passando um produto sem banco.
+     * Processes a product: fetches the price from all stores and saves the lowest.
+     * Can be called directly in tests by passing a product without a database.
      */
-    public void processarProduto(Product produto) {
-        List<ProductLink> links = produto.getLinks();
+    public void processProduct(Product product) {
+        List<ProductLink> links = product.getLinks();
 
-        System.out.println("\nIniciando crawler para o produto: " + produto.getName());
+        System.out.println("\nStarting crawler for: " + product.getName());
 
         if (links == null || links.isEmpty()) {
-            System.out.println("[AVISO] Produto '" + produto.getName() + "' nao possui links cadastrados. Pulando.");
+            System.out.println("[WARNING] Product '" + product.getName() + "' has no store links. Skipping.");
             return;
         }
 
-        Float menorPreco = null;
-        String lojaDoMenorPreco = null;
+        Float lowestPrice = null;
+        String lowestStore = null;
 
         for (ProductLink link : links) {
-            Float preco = scraper.fetchPrice(link.getUrl(), link.getStoreName());
+            Float price = scraper.fetchPrice(link.getUrl(), link.getStoreName());
 
-            if (preco == null) {
-                System.out.println("   [IGNORADO] " + link.getStoreName() + " retornou preco invalido.");
+            if (price == null) {
+                System.out.println("   [SKIPPED] " + link.getStoreName() + " returned no valid price.");
                 continue;
             }
 
-            System.out.println("-> Preco encontrado na " + link.getStoreName() + ": R$ " + preco);
+            System.out.println("-> Price found at " + link.getStoreName() + ": R$ " + price);
 
-            if (menorPreco == null || preco < menorPreco) {
-                menorPreco = preco;
-                lojaDoMenorPreco = link.getStoreName();
+            if (lowestPrice == null || price < lowestPrice) {
+                lowestPrice = price;
+                lowestStore = link.getStoreName();
             }
         }
 
-        if (menorPreco == null) {
-            System.out.println("[AVISO] Nenhum preco valido encontrado para: " + produto.getName());
+        if (lowestPrice == null) {
+            System.out.println("[WARNING] No valid price found for: " + product.getName());
             return;
         }
 
-        System.out.println("==> Menor preco atualizado: R$ " + menorPreco + " (" + lojaDoMenorPreco + ")");
+        System.out.println("==> Best price updated: R$ " + lowestPrice + " (" + lowestStore + ")");
 
-        // Cria o novo preco com a loja e atualiza o produto
-        // O metodo setPrice() ja cuida de mover o preco atual para o historico
-        Price novoPreco = new Price(menorPreco, new Date(), lojaDoMenorPreco);
-        produto.setPrice(novoPreco);
+        // Creates the new price with store info and updates the product.
+        // setPrice() only adds to history if the price actually changed.
+        Price newPrice = new Price(lowestPrice, new Date(), lowestStore);
+        product.setPrice(newPrice);
 
-        // Persiste a alteracao no banco (apenas se o armazenamento estiver disponivel)
-        if (armazenamento != null) {
-            armazenamento.update(produto);
+        // Persists the change to the database (only if storage is available)
+        if (storage != null) {
+            storage.update(product);
         }
     }
 }

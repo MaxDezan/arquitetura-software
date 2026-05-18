@@ -7,7 +7,7 @@ import domain.Price;
 
 public class PriceService extends BaseService {
     public PriceService() {
-        armazenamento = new DatabaseStorage<>(Price.class);
+        storage = new DatabaseStorage<>(Price.class);
     }
 
 }

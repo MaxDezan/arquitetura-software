@@ -6,33 +6,33 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public abstract class BaseService implements ServiceInterface {
-    protected PersistInterface armazenamento;
+    protected PersistInterface storage;
 
     @Override
     public void save(EntityInterface entity) {
-        armazenamento.save(entity);
+        storage.save(entity);
     }
 
     @Override
     public void edit(EntityInterface entity) {
-        armazenamento.update(entity);
+        storage.update(entity);
     }
 
     @Override
     public void delete(EntityInterface entity) {
-        armazenamento.delete(entity);
+        storage.delete(entity);
     }
 
     @Override
     public void listAll() {
-        ArrayList<EntityInterface> dados = armazenamento.listAll();
-        for (int i = 0; i < dados.size(); i++) {
-            System.out.println(dados.get(i));
+        ArrayList<EntityInterface> data = storage.listAll();
+        for (int i = 0; i < data.size(); i++) {
+            System.out.println(data.get(i));
         }
     }
 
     @Override
     public EntityInterface getById(UUID id) {
-        return armazenamento.findOneById(id);
+        return storage.findOneById(id);
     }
 }

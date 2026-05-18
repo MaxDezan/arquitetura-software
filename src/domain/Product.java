@@ -32,7 +32,7 @@ public class Product implements EntityInterface {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Price> historicalPrice = new ArrayList<>();
 
-    // Lista de links de lojas para rastreamento de preco
+    // List of store links for price tracking
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ProductLink> links = new ArrayList<>();
 
@@ -50,7 +50,7 @@ public class Product implements EntityInterface {
         this.name = name;
         this.price = price;
         this.links = links;
-        // Garante que cada link aponta para este produto
+        // Ensures each link points back to this product
         for (ProductLink link : links) {
             link.setProduct(this);
         }
@@ -77,15 +77,26 @@ public class Product implements EntityInterface {
     }
 
     public void setPrice(Price newPrice) {
+        // Only adds to history if the current price exists AND the value actually changed
         if (this.price != null) {
-            this.price.setProduct(this);
-            historicalPrice.add(this.price);
+            boolean priceChanged = !this.price.getPrice().equals(newPrice.getPrice());
+            if (priceChanged) {
+                this.price.setProduct(this);
+                historicalPrice.add(this.price);
+            }
         }
         this.price = newPrice;
     }
 
     public void setPrice(Float value) {
         setPrice(new Price(value, new Date()));
+    }
+
+    /**
+     * Clears the entire price history of this product.
+     */
+    public void clearHistory() {
+        this.historicalPrice.clear();
     }
 
     public List<Price> getHistoricalPrice() {

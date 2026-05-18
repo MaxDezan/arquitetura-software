@@ -1,141 +1,138 @@
-# Monitoramento de Preços de Produtos
+# Product Price Monitor
 
-Sistema em Java que rastreia o preço de produtos em múltiplas lojas online, salva o histórico de preços e identifica onde o produto está mais barato.
-
----
-
-## Tecnologias
-
-- **Java 25** (com `--enable-preview`)
-- **Hibernate 6 + JPA** — persistência com banco SQLite
-- **Playwright (modo API/CURL)** — requisições HTTP puras, sem abrir navegador
-- **JUnit 5 + Mockito** — testes automatizados
+A Java application that tracks product prices across multiple online stores, saves price history, and identifies where a product is cheapest.
 
 ---
 
-## Pré-requisitos
+## Technologies
 
-- Java 25 instalado em `C:\Program Files\Java\jdk-25.0.3`
-- IntelliJ IDEA (o Maven embutido é utilizado nos comandos abaixo)
+- **Java 21+** (with `--enable-preview` for unnamed main class)
+- **Hibernate 6 + JPA** — persistence with SQLite database
+- **Playwright (headless Chromium)** — real browser scraping, no visible window
+- **JUnit 5 + Mockito** — automated unit tests
 
 ---
 
-## Como compilar
+## Prerequisites
+
+- Java 21 or later installed and on `PATH`
+- Maven available on `PATH` (or use the IntelliJ bundled Maven)
+
+---
+
+## How to run
+
+Single command — compiles and runs:
 
 ```powershell
-& "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.6.1\plugins\maven\lib\maven3\bin\mvn.cmd" compile
+mvn clean compile -q; .\run_app.ps1
 ```
 
 ---
 
-## Como rodar os testes
+## How to run tests
 
 ```powershell
-& "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.6.1\plugins\maven\lib\maven3\bin\mvn.cmd" test
+mvn test
 ```
 
-Resultado esperado:
+Expected result:
 
 ```
 Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
-Os 6 cenários testados são:
-1. Identifica o menor preço entre Amazon e Kabum
-2. Funciona quando a Amazon é mais barata
-3. Acumula histórico após múltiplas execuções do crawler
-4. Não falha quando o produto não possui links
-5. Ignora link quebrado e usa a loja válida
-6. Não altera o preço se todas as lojas retornarem erro
+The 6 test scenarios are:
+1. Identifies the lowest price between Amazon and Kabum
+2. Works when Amazon is cheaper
+3. Accumulates history after multiple crawler runs
+4. Does not fail when a product has no links
+5. Ignores a broken link and uses the valid store
+6. Does not change the price if all stores return an error
 
 ---
 
-## Como rodar a aplicação
+## How to use the Crawler
 
-```powershell
-.\run_app.ps1
-```
+### Step 1 — Register a product with store links (do this once)
 
----
-
-## Como usar o Crawler
-
-### Passo 1 — Cadastrar um produto com links (faça isso uma vez)
-
-No arquivo `src/Main.java`, descomente o bloco do **PASSO 1**:
+In `src/Main.java`, uncomment the **STEP 1** block:
 
 ```java
-ProductLink linkAmazon = new ProductLink("Amazon", "https://www.amazon.com.br/...");
-ProductLink linkKabum  = new ProductLink("Kabum",  "https://www.kabum.com.br/...");
+ProductLink linkAmazon = new ProductLink("Amazon", "https://www.amazon.com.br/dp/...");
+ProductLink linkKabum  = new ProductLink("Kabum",  "https://www.kabum.com.br/produto/...");
 
-Product ps5 = new Product(
-    "SKU-PS5",
-    "PlayStation 5",
+Product ps5slim = new Product(
+    "SKU-PS5-SLIM",
+    "PlayStation 5 Slim",
     new Price(4000f, new Date()),
     new ArrayList<>(List.of(linkAmazon, linkKabum))
 );
-productService.save(ps5);
+productService.save(ps5slim);
 ```
 
-Rode a aplicação. Após salvar, **comente o bloco novamente** para não duplicar o produto.
+Run the app. After saving, **comment the block out again** to avoid duplicating the product on the next run.
 
-### Passo 2 — Executar o Crawler
+### Step 2 — Run the Crawler
 
-Com o produto já cadastrado, o **PASSO 3** do `Main.java` já está ativo:
+With the product already registered, **STEP 3** in `Main.java` is always active:
 
 ```java
 CrawlerService crawler = new CrawlerService(new PlaywrightApiScraper());
 crawler.executar();
 ```
 
-O crawler vai:
-1. Buscar o preço em cada loja via requisição HTTP (sem abrir navegador)
-2. Comparar os preços encontrados
-3. Salvar o **menor preço** no histórico, junto com o nome da loja
+The crawler will:
+1. Open a headless browser (Chromium) — no window appears
+2. Navigate to each store URL and extract the current price
+3. Compare all prices found
+4. Save the **lowest price** to history, along with the store name
 
-### Exemplo de saída esperada no console
+### Expected console output
 
 ```
-=== Produtos cadastrados ===
-Product { sku='SKU-PS5', name='PlayStation 5', ... }
+=== Registered products ===
+Product { sku='SKU-PS5-SLIM', name='PlayStation 5 Slim', ... }
 
-=== Iniciando execucao do Crawler ===
+=== Starting Crawler ===
 
-Iniciando crawler para o produto: PlayStation 5
--> Acessando Amazon: https://www.amazon.com.br/...
--> Preco encontrado na Amazon: R$ 3799.0
--> Acessando Kabum: https://www.kabum.com.br/...
--> Preco encontrado na Kabum: R$ 3699.0
-==> Menor preco atualizado: R$ 3699.0 (Kabum)
+Starting crawler for: PlayStation 5 Slim
+-> Navigating to Amazon: https://www.amazon.com.br/...
+Amazon price: R$ 3900.8
+-> Price found at Amazon: R$ 3900.8
+-> Navigating to Kabum: https://www.kabum.com.br/...
+Kabum price: R$ 4179.05
+-> Price found at Kabum: R$ 4179.05
+==> Best price updated: R$ 3900.8 (Amazon)
 
-=== Crawler finalizado ===
+=== Crawler finished ===
 
-=== Produtos apos execucao do Crawler ===
-Product { sku='SKU-PS5', name='PlayStation 5', price=3699.0 @ ... (Kabum), ... }
+=== Products after Crawler run ===
+Product { sku='SKU-PS5-SLIM', name='PlayStation 5 Slim', price=3900.8 @ ... (Amazon), ... }
 ```
 
 ---
 
-## Estrutura do projeto
+## Project structure
 
 ```
 src/
-├── Main.java                        # Ponto de entrada
+├── Main.java                        # Entry point
 ├── domain/
-│   ├── Product.java                 # Entidade produto
-│   ├── Price.java                   # Entidade preco (com nome da loja)
-│   ├── ProductLink.java             # Entidade link de loja
+│   ├── Product.java                 # Product entity
+│   ├── Price.java                   # Price entity (with store name)
+│   ├── ProductLink.java             # Store link entity
 │   └── EntityInterface.java
 ├── service/
-│   ├── CrawlerService.java          # Logica central do crawler
+│   ├── CrawlerService.java          # Core crawler logic
 │   ├── ProductService.java
 │   ├── PriceService.java
 │   └── BaseService.java
 ├── adapter/
-│   ├── PriceScraperAdapter.java     # Interface do scraper (testavel)
-│   ├── PlaywrightApiScraper.java    # Implementacao com Playwright (modo CURL)
+│   ├── PriceScraperAdapter.java     # Scraper interface (testable with mocks)
+│   ├── PlaywrightApiScraper.java    # Playwright headless Chromium implementation
 │   └── DatabaseStorage.java
 └── test/
-    └── CrawlerServiceTest.java      # 6 testes unitarios com Mockito
+    └── CrawlerServiceTest.java      # 6 unit tests with Mockito
 ```

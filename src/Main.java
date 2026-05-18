@@ -1,3 +1,4 @@
+import adapter.DatabaseStorage;
 import adapter.PlaywrightApiScraper;
 import domain.Price;
 import domain.Product;
@@ -8,34 +9,48 @@ import service.ProductService;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 void main() {
     ProductService productService = new ProductService();
 
-    // --- PASSO 1: Cadastro de produtos com links (rode uma vez, depois comente) ---
-    // ProductLink linkAmazon = new ProductLink("Amazon", "https://www.amazon.com.br/PlayStation-5/dp/B09DFKP1GJ");
-    // ProductLink linkKabum  = new ProductLink("Kabum",  "https://www.kabum.com.br/produto/107461");
+    // One-time cleanup: removes zero-value history entries (registration placeholder)
+    new DatabaseStorage<>(Product.class).clearZeroValueHistory();
+
+    // --- STEP 1: Register products with store links (run once, then comment out) ---
+    // ProductLink linkAmazon = new ProductLink("Amazon", "https://www.amazon.com.br/dp/B0FPGF9J2J");
+    // ProductLink linkKabum  = new ProductLink("Kabum",  "https://www.kabum.com.br/produto/989702");
     //
-    // Product ps5 = new Product(
-    //     "SKU-PS5",
-    //     "PlayStation 5",
+    // Product ps5slim = new Product(
+    //     "SKU-PS5-SLIM",
+    //     "PlayStation 5 Slim",
     //     new Price(4000f, new Date()),
     //     new ArrayList<>(List.of(linkAmazon, linkKabum))
     // );
-    // productService.save(ps5);
-    // System.out.println("Produto cadastrado: " + ps5);
+    // productService.save(ps5slim);
+    // System.out.println("Product registered: " + ps5slim);
+    //
+    // ProductLink linkAmazonTab = new ProductLink("Amazon", "https://www.amazon.com.br/dp/B0F3LTWYS5");
+    // ProductLink linkKabumTab  = new ProductLink("Kabum",  "https://www.kabum.com.br/produto/755274");
+    //
+    // Product tabS10fe = new Product(
+    //     "SKU-TAB-S10-FE",
+    //     "Samsung Galaxy Tab S10 FE",
+    //     new Price(0f, new Date()),
+    //     new ArrayList<>(List.of(linkAmazonTab, linkKabumTab))
+    // );
+    // productService.save(tabS10fe);
+    // System.out.println("Product registered: " + tabS10fe);
 
-    // --- PASSO 2: Listar todos os produtos cadastrados ---
-    System.out.println("=== Produtos cadastrados ===");
+    // --- STEP 2: List all registered products ---
+    System.out.println("=== Registered products ===");
     productService.listAll();
 
-    // --- PASSO 3: Executar o Crawler (busca precos em todas as lojas) ---
-    // Usa o PlaywrightApiScraper: modo HTTP puro (CURL), sem abrir navegador
+    // --- STEP 3: Run the Crawler (fetches prices from all stores) ---
+    // Uses PlaywrightApiScraper: headless Chromium, no visible window
     CrawlerService crawler = new CrawlerService(new PlaywrightApiScraper());
     crawler.executar();
 
-    // --- PASSO 4: Exibir produtos atualizados apos o crawler ---
-    System.out.println("\n=== Produtos apos execucao do Crawler ===");
+    // --- STEP 4: Display products after crawler run ---
+    System.out.println("\n=== Products after Crawler run ===");
     productService.listAll();
 }

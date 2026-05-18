@@ -1,0 +1,16 @@
+domain\EntityInterface.class
+service\BaseService.class
+service\PriceService.class
+adapter\PersistInterface.class
+service\CrawlerService.class
+service\ServiceInterface.class
+adapter\PriceScraperAdapter.class
+adapter\PlaywrightApiScraper.class
+test\CrawlerServiceTest.class
+domain\Price.class
+Main.class
+domain\ProductLink.class
+service\ProductService.class
+utils\GenerateValue.class
+domain\Product.class
+adapter\DatabaseStorage.class

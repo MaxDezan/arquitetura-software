@@ -7,7 +7,7 @@ import domain.Product;
 
 public class ProductService extends BaseService {
     public ProductService() {
-        armazenamento = new DatabaseStorage<>(Product.class);
+        storage = new DatabaseStorage<>(Product.class);
     }
 
 }

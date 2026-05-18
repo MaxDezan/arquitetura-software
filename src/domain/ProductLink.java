@@ -16,11 +16,11 @@ public class ProductLink implements EntityInterface {
     @Column(name = "uuid", length = 36)
     private UUID uuid;
 
-    // URL da pagina do produto na loja
+    // Product page URL at the store
     @Column(name = "url", nullable = false)
     private String url;
 
-    // Nome da loja (ex: "Amazon", "Kabum")
+    // Store name (e.g. "Amazon", "Kabum")
     @Column(name = "store_name", nullable = false)
     private String storeName;
 

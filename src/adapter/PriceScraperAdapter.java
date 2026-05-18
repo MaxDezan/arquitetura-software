@@ -1,18 +1,32 @@
 package adapter;
 
 /**
- * Interface que define o contrato para buscar precos de produtos em lojas.
- * Permite que o CrawlerService seja testado com Mocks sem precisar
- * acessar a internet de verdade.
+ * Interface defining the contract for fetching product prices from stores.
+ * Allows CrawlerService to be tested with mocks without hitting the real internet.
+ *
+ * Extends AutoCloseable so the scraper can be used in try-with-resources,
+ * ensuring resources (e.g. Playwright/Browser) are properly released.
  */
-public interface PriceScraperAdapter {
+public interface PriceScraperAdapter extends AutoCloseable {
 
     /**
-     * Busca o preco atual de um produto na URL informada.
+     * Initializes scraper resources (e.g. opens the browser).
+     * Must be called before fetchPrice.
+     */
+    void open();
+
+    /**
+     * Fetches the current price of a product at the given URL.
      *
-     * @param url       URL da pagina do produto na loja
-     * @param storeName Nome da loja (usado para logs)
-     * @return O preco encontrado, ou null se nao foi possivel extrair
+     * @param url       Product page URL at the store
+     * @param storeName Store name (used for logging)
+     * @return The price found, or null if it could not be extracted
      */
     Float fetchPrice(String url, String storeName);
+
+    /**
+     * Releases scraper resources.
+     */
+    @Override
+    void close();
 }

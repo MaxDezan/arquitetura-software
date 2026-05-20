@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Testes unitarios do CrawlerService desativados temporariamente.
+ * Tests disaabled by now.
  */
 class CrawlerServiceTest {
 }

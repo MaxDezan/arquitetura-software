@@ -22,10 +22,10 @@ A Java application that tracks product prices across multiple online stores, sav
 
 ## How to run
 
-Single command — compiles and runs:
+Single command — compiles and runs (using the Maven Wrapper if Maven is not installed on your system):
 
 ```powershell
-mvn clean compile -q; .\run_app.ps1
+.\mvnw.cmd clean compile -q; .\run_app.ps1
 ```
 
 ---
@@ -33,7 +33,7 @@ mvn clean compile -q; .\run_app.ps1
 ## How to run tests
 
 ```powershell
-mvn test
+.\mvnw.cmd test
 ```
 
 Expected result:

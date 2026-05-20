@@ -28,3 +28,13 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Maven Build ###
+target/
+
+### Database ###
+*.db
+products.db
+
+### IntelliJ IDEA ###
+.idea/

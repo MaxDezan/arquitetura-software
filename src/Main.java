@@ -48,7 +48,7 @@ void main() {
     // --- STEP 3: Run the Crawler (fetches prices from all stores) ---
     // Uses PlaywrightApiScraper: headless Chromium, no visible window
     CrawlerService crawler = new CrawlerService(new PlaywrightApiScraper());
-    crawler.executar();
+    crawler.execute();
 
     // --- STEP 4: Display products after crawler run ---
     System.out.println("\n=== Products after Crawler run ===");

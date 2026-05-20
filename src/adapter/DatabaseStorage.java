@@ -35,50 +35,54 @@ public class DatabaseStorage<T extends EntityInterface> implements PersistInterf
         }
     }
 
-    @Override
-    public void save(EntityInterface entity) {
+    /**
+     * Executes a callback function within a database transaction, managing the EntityManager lifecycle.
+     */
+    private <R> R executeInTransaction(java.util.function.Function<EntityManager, R> action) {
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            em.persist(entity);
+            R result = action.apply(em);
             em.getTransaction().commit();
+            return result;
         } catch (RuntimeException e) {
-            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
             throw e;
         } finally {
             em.close();
         }
+    }
+
+    /**
+     * Executes a callback consumer within a database transaction, managing the EntityManager lifecycle.
+     */
+    private void runInTransaction(java.util.function.Consumer<EntityManager> action) {
+        executeInTransaction(em -> {
+            action.accept(em);
+            return null;
+        });
+    }
+
+    @Override
+    public void save(EntityInterface entity) {
+        runInTransaction(em -> em.persist(entity));
     }
 
     @Override
     public void update(EntityInterface entity) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            em.merge(entity);
-            em.getTransaction().commit();
-        } catch (RuntimeException e) {
-            if (em.getTransaction().isActive()) em.getTransaction().rollback();
-            throw e;
-        } finally {
-            em.close();
-        }
+        runInTransaction(em -> em.merge(entity));
     }
 
     @Override
     public void delete(EntityInterface entity) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
+        runInTransaction(em -> {
             EntityInterface managed = em.find(entity.getClass(), entity.getUUID());
-            if (managed != null) em.remove(managed);
-            em.getTransaction().commit();
-        } catch (RuntimeException e) {
-            if (em.getTransaction().isActive()) em.getTransaction().rollback();
-            throw e;
-        } finally {
-            em.close();
-        }
+            if (managed != null) {
+                em.remove(managed);
+            }
+        });
     }
 
     @Override
@@ -111,20 +115,14 @@ public class DatabaseStorage<T extends EntityInterface> implements PersistInterf
      * Use this to clean up invalid history created when registering a product with price 0f.
      */
     public void clearZeroValueHistory() {
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
+        runInTransaction(em -> {
             int deleted = em.createQuery(
                 "DELETE FROM Price p WHERE p.product IS NOT NULL AND p.price = 0"
             ).executeUpdate();
-            em.getTransaction().commit();
-            if (deleted > 0) System.out.println("[DB] Zero-value history entries removed: " + deleted);
-        } catch (RuntimeException e) {
-            if (em.getTransaction().isActive()) em.getTransaction().rollback();
-            throw e;
-        } finally {
-            em.close();
-        }
+            if (deleted > 0) {
+                System.out.println("[DB] Zero-value history entries removed: " + deleted);
+            }
+        });
     }
 
     /**
@@ -132,20 +130,12 @@ public class DatabaseStorage<T extends EntityInterface> implements PersistInterf
      * keeping only the current price for each product.
      */
     public void clearAllHistory() {
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
+        runInTransaction(em -> {
             int deleted = em.createQuery(
                 "DELETE FROM Price p WHERE p.product IS NOT NULL"
             ).executeUpdate();
-            em.getTransaction().commit();
             System.out.println("[DB] Price history cleared: " + deleted + " records removed.");
-        } catch (RuntimeException e) {
-            if (em.getTransaction().isActive()) em.getTransaction().rollback();
-            throw e;
-        } finally {
-            em.close();
-        }
+        });
     }
 
     /**

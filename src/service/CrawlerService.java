@@ -1,6 +1,7 @@
 package service;
 
 import adapter.DatabaseStorage;
+import adapter.PersistInterface;
 import adapter.PriceScraperAdapter;
 import domain.Price;
 import domain.Product;
@@ -21,7 +22,7 @@ import java.util.List;
 public class CrawlerService {
 
     private final PriceScraperAdapter scraper;
-    private final DatabaseStorage<Product> storage;
+    private final PersistInterface storage;
 
     public CrawlerService(PriceScraperAdapter scraper) {
         this.scraper = scraper;
@@ -31,7 +32,7 @@ public class CrawlerService {
     /**
      * Alternative constructor for testing (allows injecting a mocked or real storage).
      */
-    public CrawlerService(PriceScraperAdapter scraper, DatabaseStorage<Product> storage) {
+    public CrawlerService(PriceScraperAdapter scraper, PersistInterface storage) {
         this.scraper = scraper;
         this.storage = storage;
     }
@@ -40,7 +41,7 @@ public class CrawlerService {
      * Runs the crawler for all products registered in the database.
      * Opens the browser once and closes it when done.
      */
-    public void executar() {
+    public void execute() {
         System.out.println("=== Starting Crawler ===");
 
         ArrayList<domain.EntityInterface> all = storage.listAll();

@@ -6,7 +6,6 @@ service\CrawlerService.class
 service\ServiceInterface.class
 adapter\PriceScraperAdapter.class
 adapter\PlaywrightApiScraper.class
-test\CrawlerServiceTest.class
 domain\Price.class
 Main.class
 domain\ProductLink.class

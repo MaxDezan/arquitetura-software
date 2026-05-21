@@ -28,6 +28,7 @@ public abstract class BaseService implements ServiceInterface {
         ArrayList<EntityInterface> data = storage.listAll();
         for (int i = 0; i < data.size(); i++) {
             System.out.println(data.get(i));
+            System.out.println();
         }
     }
 

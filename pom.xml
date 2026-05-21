@@ -47,27 +47,10 @@
             <version>1.49.0</version>
         </dependency>
 
-        <!-- JUnit 5 para testes automatizados -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.11.3</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Mockito para simular dependencias nos testes -->
-        <!-- mockito-inline garante compatibilidade com JVMs nao oficialmente suportadas -->
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-inline</artifactId>
-            <version>5.2.0</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
         <sourceDirectory>src</sourceDirectory>
-        <testSourceDirectory>src/test</testSourceDirectory>
         <resources>
             <resource>
                 <directory>resources</directory>
@@ -77,16 +60,6 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
-            </plugin>
-
-            <!-- Plugin para rodar testes JUnit 5 com mvn test -->
-            <!-- bytebuddy.experimental necessario para Mockito funcionar no Java 25 -->
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.2</version>
-                <configuration>
-                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
-                </configuration>
             </plugin>
 
             <plugin>

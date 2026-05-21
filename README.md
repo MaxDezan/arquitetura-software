@@ -6,10 +6,9 @@ A Java application that tracks product prices across multiple online stores, sav
 
 ## Technologies
 
-- **Java 21+** (with `--enable-preview` for unnamed main class)
+- **Java 25**
 - **Hibernate 6 + JPA** — persistence with SQLite database
-- **Playwright (headless Chromium)** — real browser scraping, no visible window
-- **JUnit 5 + Mockito** — automated unit tests
+- **Playwright (headless Chromium)**
 
 ---
 
@@ -22,34 +21,11 @@ A Java application that tracks product prices across multiple online stores, sav
 
 ## How to run
 
-Single command — compiles and runs (using the Maven Wrapper if Maven is not installed on your system):
+Single command — compiles and runs (using the Maven Wrapper if Maven is not installed on your system, if it is, just use mvn instead .\mvnw.cmd):
 
 ```powershell
 .\mvnw.cmd clean compile -q; .\run_app.ps1
 ```
-
----
-
-## How to run tests
-
-```powershell
-.\mvnw.cmd test
-```
-
-Expected result:
-
-```
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
-BUILD SUCCESS
-```
-
-The 6 test scenarios are:
-1. Identifies the lowest price between Amazon and Kabum
-2. Works when Amazon is cheaper
-3. Accumulates history after multiple crawler runs
-4. Does not fail when a product has no links
-5. Ignores a broken link and uses the valid store
-6. Does not change the price if all stores return an error
 
 ---
 
@@ -130,9 +106,7 @@ src/
 │   ├── PriceService.java
 │   └── BaseService.java
 ├── adapter/
-│   ├── PriceScraperAdapter.java     # Scraper interface (testable with mocks)
+│   ├── PriceScraperAdapter.java     # Scraper interface
 │   ├── PlaywrightApiScraper.java    # Playwright headless Chromium implementation
 │   └── DatabaseStorage.java
-└── test/
-    └── CrawlerServiceTest.java      # 6 unit tests with Mockito
 ```

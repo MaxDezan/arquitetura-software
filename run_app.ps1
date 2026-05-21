@@ -32,4 +32,4 @@ foreach ($lib in $libs) {
     }
 }
 
-java --enable-preview -cp $cp Main
+java -cp $cp Main

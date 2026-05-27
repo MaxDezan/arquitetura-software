@@ -40,7 +40,7 @@
             <version>2.0.16</version>
         </dependency>
 
-        <!-- Playwright para requisicoes HTTP puras (modo API/CURL) -->
+
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>

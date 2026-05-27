@@ -22,6 +22,7 @@ public class PlaywrightApiScraper implements PriceScraperAdapter {
 
     private Playwright playwright;
     private Browser browser;
+    private BrowserContext context;
 
     @Override
     public void open() {
@@ -34,32 +35,54 @@ public class PlaywrightApiScraper implements PriceScraperAdapter {
                         "--disable-setuid-sandbox",
                         "--window-size=1920,1080"
                 )));
+        context = browser.newContext(new Browser.NewContextOptions()
+                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+                .setViewportSize(1920, 1080)
+                .setLocale("pt-BR")
+                .setTimezoneId("America/Sao_Paulo")
+                .setExtraHTTPHeaders(Map.of(
+                        "Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+                        "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                        "sec-ch-ua", "\"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\", \"Not-A.Brand\";v=\"99\"",
+                        "sec-ch-ua-mobile", "?0",
+                        "sec-ch-ua-platform", "\"Windows\"",
+                        "sec-fetch-dest", "document",
+                        "sec-fetch-mode", "navigate",
+                        "sec-fetch-site", "none",
+                        "sec-fetch-user", "?1",
+                        "Upgrade-Insecure-Requests", "1"
+                )));
+        
+        // Hide webdriver flag from browser fingerprint to bypass bot detection/CAPTCHAs
+        context.addInitScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+        
         System.out.println("[Scraper] Browser started.");
+
+        // Warm-up step: visit Amazon homepage once to establish valid session cookies (session-id, etc.)
+        try {
+            Page page = context.newPage();
+            page.navigate("https://www.amazon.com.br", new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+            page.waitForTimeout(3000);
+            page.close();
+        } catch (Exception ignored) {}
     }
 
     @Override
     public void close() {
-        if (browser != null) { browser.close(); browser = null; }
-        if (playwright != null) { playwright.close(); playwright = null; }
+        if (context != null) { try { context.close(); } catch (Exception ignored) {} context = null; }
+        if (browser != null) { try { browser.close(); } catch (Exception ignored) {} browser = null; }
+        if (playwright != null) { try { playwright.close(); } catch (Exception ignored) {} playwright = null; }
         System.out.println("[Scraper] Browser closed.");
     }
 
     @Override
     public Float fetchPrice(String url, String storeName) {
-        if (browser == null) {
+        if (context == null) {
             throw new IllegalStateException("Scraper not initialized. Call open() before fetchPrice().");
         }
-        BrowserContext context = null;
+        Page page = null;
         try {
-            context = browser.newContext(new Browser.NewContextOptions()
-                    .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
-                    .setViewportSize(1920, 1080)
-                    .setExtraHTTPHeaders(Map.of(
-                            "Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-                            "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
-                    )));
-
-            Page page = context.newPage();
+            page = context.newPage();
 
             // Amazon uses LOAD (not NETWORKIDLE) because it fires infinite tracking requests
             // that prevent networkidle from ever being reached, causing a 30s timeout
@@ -75,6 +98,31 @@ public class PlaywrightApiScraper implements PriceScraperAdapter {
             // Wait for JS rendering (especially important for SPAs like Kabum)
             int waitMs = storeName.equalsIgnoreCase("Kabum") ? 7000 : 4000;
             page.waitForTimeout(waitMs);
+
+            // Self-healing navigation loop for Amazon WAF CAPTCHAs
+            if (storeName.equalsIgnoreCase("Amazon")) {
+                int attempts = 0;
+                boolean isCaptcha = true;
+                while (attempts < 3 && isCaptcha) {
+                    String title = page.title();
+                    String contentLower = page.content().toLowerCase();
+                    
+                    isCaptcha = title.equals("Amazon.com.br")
+                            || contentLower.contains("captcha")
+                            || contentLower.contains("api-services-support@amazon.com")
+                            || contentLower.contains("correios.donotsend");
+                    
+                    if (isCaptcha) {
+                        attempts++;
+                        if (attempts < 3) {
+                            System.out.println("Amazon CAPTCHA detected. Retrying...");
+                            page.waitForTimeout(4000 + (long)(Math.random() * 3000));
+                            page.navigate(url, new Page.NavigateOptions().setWaitUntil(waitStrategy));
+                            page.waitForTimeout(waitMs);
+                        }
+                    }
+                }
+            }
 
             Float price = extractPriceByStore(page, storeName);
 
@@ -95,7 +143,7 @@ public class PlaywrightApiScraper implements PriceScraperAdapter {
             System.out.println("   [ERROR] Failed to access " + storeName + ": " + e.getMessage().split("\n")[0]);
             return null;
         } finally {
-            if (context != null) { try { context.close(); } catch (Exception ignored) {} }
+            if (page != null) { try { page.close(); } catch (Exception ignored) {} }
         }
     }
 
@@ -125,9 +173,11 @@ public class PlaywrightApiScraper implements PriceScraperAdapter {
      */
     private Float extractPriceAmazon(Page page) {
         String[] selectors = {
-            "span.a-price.apexPriceToPay span.a-offscreen",
-            "span.a-price.priceToPay span.a-offscreen",
-            "#corePrice_feature_div span.a-offscreen",
+            "span.a-price.apexPriceToPay",
+            "span.a-price.priceToPay",
+            "#corePriceDisplay_desktop_feature_div span.a-price",
+            "#corePrice_feature_div span.a-price",
+            "span.a-price", // General fallback for any standard price
             "#priceblock_dealprice",
             "#priceblock_ourprice"
         };
@@ -135,9 +185,35 @@ public class PlaywrightApiScraper implements PriceScraperAdapter {
         for (String selector : selectors) {
             try {
                 // evaluate() reads textContent even from hidden elements (display:none)
-                // which Playwright's isVisible()/innerText() ignores
+                // which Playwright's isVisible()/innerText() ignores.
+                // It handles offscreen, direct elements, or builds from whole + fraction.
                 String text = (String) page.evaluate(
-                    "sel => { const el = document.querySelector(sel); return el ? el.textContent : null; }",
+                    "sel => {\n" +
+                    "    const el = document.querySelector(sel);\n" +
+                    "    if (!el) return null;\n" +
+                    "    \n" +
+                    "    // 1. Check if there is a nested a-offscreen\n" +
+                    "    const offscreen = el.querySelector('span.a-offscreen');\n" +
+                    "    if (offscreen && offscreen.textContent) {\n" +
+                    "        return offscreen.textContent.trim();\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    // 2. If the element itself is a-offscreen\n" +
+                    "    if (el.classList.contains('a-offscreen')) {\n" +
+                    "        return el.textContent.trim();\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    // 3. Build price from whole and fraction components if visible\n" +
+                    "    const wholeEl = el.querySelector('.a-price-whole');\n" +
+                    "    const fractionEl = el.querySelector('.a-price-fraction');\n" +
+                    "    if (wholeEl && wholeEl.textContent) {\n" +
+                    "        const wholeText = wholeEl.textContent.replace(/[^\\d]/g, '');\n" +
+                    "        const fractionText = fractionEl ? fractionEl.textContent.replace(/[^\\d]/g, '') : '00';\n" +
+                    "        return 'R$ ' + wholeText + ',' + fractionText;\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    return el.textContent ? el.textContent.trim() : null;\n" +
+                    "}",
                     selector
                 );
                 if (text != null && !text.isBlank() && text.contains("R$")) {

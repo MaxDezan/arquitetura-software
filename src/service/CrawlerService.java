@@ -85,6 +85,12 @@ public class CrawlerService {
         String lowestStore = null;
 
         for (ProductLink link : links) {
+            // Respectful crawling delay to mimic human behavior and avoid CAPTCHAs
+            try {
+                Thread.sleep(3000 + (long)(Math.random() * 2000));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             Float price = scraper.fetchPrice(link.getUrl(), link.getStoreName());
 
             if (price == null) {
